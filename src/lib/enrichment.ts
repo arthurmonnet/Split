@@ -1,4 +1,5 @@
 import { storage } from './storage'
+import { callLLM } from './llm-client'
 
 const CLEANUP_RULES: RegExp[] = [
   /^SQ \*\s*/i,
@@ -43,42 +44,14 @@ export async function enrichBatchLLM(rawNames: string[]): Promise<Record<string,
 
   if (unknowns.length === 0) return cachedNames
 
-  const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
-  if (!apiKey) return cachedNames
+  const prompt = `Voici des noms de marchands extraits d'un relevé de carte de crédit. Pour chacun, donne le vrai nom lisible du commerce. Réponds UNIQUEMENT en JSON : {"results": [{"raw": "...", "clean": "..."}]}\n\nNoms :\n${unknowns.map((n) => `- ${n}`).join('\n')}`
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
-        messages: [
-          {
-            role: 'user',
-            content: `Voici des noms de marchands extraits d'un relevé de carte de crédit. Pour chacun, donne le vrai nom lisible du commerce. Réponds UNIQUEMENT en JSON : {"results": [{"raw": "...", "clean": "..."}]}\n\nNoms :\n${unknowns.map((n) => `- ${n}`).join('\n')}`,
-          },
-        ],
-      }),
-    })
-
-    const data = await response.json()
-    const text = data.content?.[0]?.text || ''
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]) as { results: { raw: string; clean: string }[] }
-      for (const r of parsed.results) {
-        cachedNames[r.raw] = r.clean
-        storage.updateMerchantName(r.raw, r.clean)
-      }
+  const parsed = await callLLM<{ results: { raw: string; clean: string }[] }>(prompt, 1000)
+  if (parsed?.results) {
+    for (const r of parsed.results) {
+      cachedNames[r.raw] = r.clean
+      storage.updateMerchantName(r.raw, r.clean)
     }
-  } catch {
-    // LLM enrichment is best-effort
   }
 
   return cachedNames

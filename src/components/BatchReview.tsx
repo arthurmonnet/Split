@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import type { Transaction } from '@/types'
+import { formatDate, classificationLabel, classificationColors } from '@/lib/ui-utils'
 
 type Props = {
   transactions: Transaction[]
@@ -20,15 +21,6 @@ export default function BatchReview({ transactions, onValidate }: Props) {
           : tx
       )
     )
-  }
-
-  const formatDate = (d: string) => {
-    try {
-      const date = new Date(d)
-      return date.toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
-    } catch {
-      return d
-    }
   }
 
   return (
@@ -50,13 +42,9 @@ export default function BatchReview({ transactions, onValidate }: Props) {
             >
               <button
                 onClick={() => toggle(tx.id)}
-                className={`shrink-0 px-2 py-1 rounded-md text-xs font-semibold transition-colors ${
-                  tx.classification === 'shared'
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-blue-100 text-blue-700'
-                }`}
+                className={`shrink-0 px-2 py-1 rounded-md text-xs font-semibold transition-colors ${classificationColors(tx.classification)}`}
               >
-                {tx.classification === 'shared' ? 'Partagé' : 'Perso'}
+                {classificationLabel(tx.classification)}
               </button>
 
               <div className="flex-1 min-w-0">
@@ -70,7 +58,7 @@ export default function BatchReview({ transactions, onValidate }: Props) {
 
               <div className="text-right shrink-0">
                 <p className="text-sm font-mono font-medium">{tx.amount.toFixed(2)}$</p>
-                <p className="text-xs text-gray-400">{formatDate(tx.date)}</p>
+                <p className="text-xs text-gray-400">{formatDate(tx.date, 'short')}</p>
               </div>
             </motion.div>
           ))}

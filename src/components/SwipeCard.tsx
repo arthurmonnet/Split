@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion'
 import type { Transaction } from '@/types'
 import { CATEGORIES } from '@/lib/categories'
+import { formatDate } from '@/lib/ui-utils'
 
 type Props = {
   transaction: Transaction
@@ -34,14 +35,6 @@ export default function SwipeCard({ transaction, onSwipe, isTop }: Props) {
       onSwipe('right')
     } else if (info.offset.x < -SWIPE_THRESHOLD) {
       onSwipe('left')
-    }
-  }
-
-  const formatDate = (d: string) => {
-    try {
-      return new Date(d).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })
-    } catch {
-      return d
     }
   }
 
@@ -104,7 +97,7 @@ export default function SwipeCard({ transaction, onSwipe, isTop }: Props) {
         <p className="text-3xl font-mono font-bold mt-4 mb-2">
           {transaction.amount.toFixed(2)}$
         </p>
-        <p className="text-sm text-gray-500">{formatDate(transaction.date)}</p>
+        <p className="text-sm text-gray-500">{formatDate(transaction.date, 'long')}</p>
         {categoryLabel && (
           <span className="inline-block mt-3 px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-500">
             {categoryLabel}

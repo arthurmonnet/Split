@@ -1,5 +1,6 @@
 import type { Transaction, Classification } from '@/types'
 import { CATEGORIES } from './categories'
+import { callLLM } from './llm-client'
 
 export type FilterSpec = {
   merchantName?: string
@@ -9,6 +10,10 @@ export type FilterSpec = {
   classification?: Classification
   dayOfWeek?: number[]
 }
+
+const CATEGORY_LIST = Object.entries(CATEGORIES)
+  .map(([key, cat]) => `${key}: ${cat.label}`)
+  .join(', ')
 
 function applyFilterSpec(spec: FilterSpec): (tx: Transaction) => boolean {
   return (tx: Transaction) => {
@@ -47,7 +52,6 @@ function applyFilterSpec(spec: FilterSpec): (tx: Transaction) => boolean {
 function parseSimpleFilter(query: string): (tx: Transaction) => boolean {
   const lower = query.toLowerCase().trim()
 
-  // Classification filters
   if (lower === 'partagé' || lower === 'partage' || lower === 'shared') {
     return (tx) => tx.classification === 'shared'
   }
@@ -58,7 +62,6 @@ function parseSimpleFilter(query: string): (tx: Transaction) => boolean {
     return (tx) => tx.classification === 'ambiguous'
   }
 
-  // Amount filters: "> 50", "< 20", ">50"
   const amountMatch = lower.match(/^([><])\s*(\d+(?:[.,]\d+)?)$/)
   if (amountMatch) {
     const op = amountMatch[1]
@@ -68,14 +71,12 @@ function parseSimpleFilter(query: string): (tx: Transaction) => boolean {
       : (tx) => tx.amount < val
   }
 
-  // Category label match
   for (const [key, cat] of Object.entries(CATEGORIES)) {
     if (lower === cat.label.toLowerCase() || lower === key) {
       return (tx) => tx.merchantCategory === key
     }
   }
 
-  // Default: substring match on merchant name
   return (tx) => {
     const name = (tx.enrichedName || tx.rawName).toLowerCase()
     return name.includes(lower)
@@ -83,33 +84,12 @@ function parseSimpleFilter(query: string): (tx: Transaction) => boolean {
 }
 
 async function parseLLMFilter(query: string): Promise<FilterSpec | null> {
-  const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
-  if (!apiKey) return null
-
-  const categoryList = Object.entries(CATEGORIES)
-    .map(([key, cat]) => `${key}: ${cat.label}`)
-    .join(', ')
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
-        messages: [
-          {
-            role: 'user',
-            content: `Tu transformes des requêtes en français en filtres JSON pour des transactions bancaires.
+  return callLLM<FilterSpec>(
+    `Tu transformes des requêtes en français en filtres JSON pour des transactions bancaires.
 
 Champs disponibles dans FilterSpec :
 - merchantName: string — sous-chaîne à chercher dans le nom du marchand
-- merchantCategory: string — une de [${categoryList}]
+- merchantCategory: string — une de [${CATEGORY_LIST}]
 - cardSource: string — nom de la carte (ex: "AMEX Cobalt", "RBC")
 - amountRange: { min?: number, max?: number }
 - classification: "shared" | "personal" | "ambiguous"
@@ -119,39 +99,19 @@ Note : les dates n'ont pas d'heure, ignore les filtres horaires.
 
 Requête : "${query}"
 
-Réponds UNIQUEMENT en JSON valide de type FilterSpec. Pas de markdown, pas d'explication.`,
-          },
-        ],
-      }),
-    })
-
-    const data = await response.json()
-    const text = data.content?.[0]?.text || ''
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]) as FilterSpec
-    }
-  } catch {
-    // LLM parsing failed, fall back to simple
-  }
-
-  return null
+Réponds UNIQUEMENT en JSON valide de type FilterSpec. Pas de markdown, pas d'explication.`
+  )
 }
 
-export async function parseNLFilter(
-  query: string,
-  _transactions: Transaction[]
-): Promise<(tx: Transaction) => boolean> {
+export async function parseNLFilter(query: string): Promise<(tx: Transaction) => boolean> {
   if (!query.trim()) {
     return () => true
   }
 
-  // Try LLM first if available
   const spec = await parseLLMFilter(query)
   if (spec) {
     return applyFilterSpec(spec)
   }
 
-  // Fallback to simple text parsing
   return parseSimpleFilter(query)
 }
