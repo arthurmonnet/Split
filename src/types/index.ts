@@ -51,4 +51,4 @@ export type StoredData = {
   amountThreshold: number
 }
 
-export type AppStep = 'drop' | 'onboarding' | 'batch' | 'swipe' | 'done'
+export type AppStep = 'drop' | 'onboarding' | 'batch' | 'swipe' | 'inbox' | 'done'

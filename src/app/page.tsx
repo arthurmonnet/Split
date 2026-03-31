@@ -11,6 +11,7 @@ import ColumnMapper from '@/components/ColumnMapper'
 import OnboardingQuestions from '@/components/OnboardingQuestions'
 import BatchReview from '@/components/BatchReview'
 import SwipeDeck from '@/components/SwipeDeck'
+import InboxView from '@/components/InboxView'
 import DoneScreen from '@/components/DoneScreen'
 
 type PendingFile = {
@@ -64,12 +65,7 @@ export default function Home() {
       if (hasUnconfigured) {
         setStep('onboarding')
       } else {
-        const nonAmbiguous = classified.filter((t) => t.classification !== 'ambiguous')
-        if (nonAmbiguous.length > 0) {
-          setStep('batch')
-        } else {
-          setStep('swipe')
-        }
+        setStep('inbox')
       }
     },
     []
@@ -133,13 +129,7 @@ export default function Home() {
     (_updatedRules: Record<string, CategoryRule>) => {
       const reclassified = classifyTransactions(transactions)
       setTransactions(reclassified)
-
-      const nonAmbiguous = reclassified.filter((t) => t.classification !== 'ambiguous')
-      if (nonAmbiguous.length > 0) {
-        setStep('batch')
-      } else {
-        setStep('swipe')
-      }
+      setStep('inbox')
     },
     [transactions]
   )
@@ -162,10 +152,34 @@ export default function Home() {
   const handleSwipeComplete = useCallback(
     (swiped: Transaction[]) => {
       const nonAmbiguous = transactions.filter((t) => t.classification !== 'ambiguous')
-      setTransactions([...nonAmbiguous, ...swiped])
-      setStep('done')
+      const merged = [...nonAmbiguous, ...swiped]
+      setTransactions(merged)
+
+      // After swiping, check if all done
+      const stillAmbiguous = merged.some((t) => t.classification === 'ambiguous')
+      if (stillAmbiguous) {
+        setStep('inbox')
+      } else {
+        setStep('done')
+      }
     },
     [transactions]
+  )
+
+  const handleInboxComplete = useCallback(
+    (classified: Transaction[]) => {
+      setTransactions(classified)
+      setStep('done')
+    },
+    []
+  )
+
+  const handleInboxSwitchToSwipe = useCallback(
+    (ambiguous: Transaction[], rest: Transaction[]) => {
+      setTransactions([...rest, ...ambiguous])
+      setStep('swipe')
+    },
+    []
   )
 
   const handleRestart = useCallback(() => {
@@ -199,6 +213,15 @@ export default function Home() {
         />
       )
 
+    case 'inbox':
+      return (
+        <InboxView
+          transactions={transactions}
+          onComplete={handleInboxComplete}
+          onSwitchToSwipe={handleInboxSwitchToSwipe}
+        />
+      )
+
     case 'batch': {
       const nonAmbiguous = transactions.filter((t) => t.classification !== 'ambiguous')
       return <BatchReview transactions={nonAmbiguous} onValidate={handleBatchValidate} />
@@ -207,7 +230,6 @@ export default function Home() {
     case 'swipe': {
       const ambiguous = transactions.filter((t) => t.classification === 'ambiguous')
       if (ambiguous.length === 0) {
-        // No ambiguous — go straight to done
         return <DoneScreen transactions={transactions} onRestart={handleRestart} />
       }
       return <SwipeDeck transactions={ambiguous} onComplete={handleSwipeComplete} />
