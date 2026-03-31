@@ -40,7 +40,7 @@ export default function ColumnMapper({ fileName, headers, onMapped }: Props) {
   const selectClass = 'w-full p-2 border border-gray-200 rounded-lg bg-white text-sm'
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
+    <div className="flex flex-col items-center justify-center min-h-[80dvh] px-4">
       <div className="w-full max-w-sm">
         <h2 className="text-xl font-bold mb-1">Format inconnu</h2>
         <p className="text-gray-500 text-sm mb-6">

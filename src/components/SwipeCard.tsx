@@ -67,7 +67,7 @@ export default function SwipeCard({ transaction, onSwipe, isTop }: Props) {
         opacity: 0,
         transition: { duration: 0.2 },
       }}
-      className="rounded-2xl border border-gray-200 shadow-sm p-6 cursor-grab active:cursor-grabbing select-none"
+      className="rounded-2xl border border-gray-200 shadow-sm p-6 cursor-grab active:cursor-grabbing select-none touch-pan-y"
     >
       {/* Direction indicators */}
       {isTop && (
@@ -88,13 +88,13 @@ export default function SwipeCard({ transaction, onSwipe, isTop }: Props) {
       )}
 
       <div className="mt-6 text-center">
-        <p className="text-2xl font-bold mb-1">
+        <p className="text-xl sm:text-2xl font-bold mb-1">
           {transaction.enrichedName || transaction.rawName}
         </p>
         {transaction.enrichedName && transaction.enrichedName !== transaction.rawName && (
           <p className="text-xs text-gray-400 mb-3">{transaction.rawName}</p>
         )}
-        <p className="text-3xl font-mono font-bold mt-4 mb-2">
+        <p className="text-2xl sm:text-3xl font-mono font-bold mt-4 mb-2">
           {transaction.amount.toFixed(2)}$
         </p>
         <p className="text-sm text-gray-500">{formatDate(transaction.date, 'long')}</p>

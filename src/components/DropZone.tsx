@@ -66,7 +66,7 @@ export default function DropZone({ onFiles }: Props) {
   }, [handleFiles])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
+    <div className="flex flex-col items-center justify-center min-h-[80dvh] px-4">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

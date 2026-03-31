@@ -65,7 +65,7 @@ export default function BatchReview({ transactions, onValidate }: Props) {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 safe-bottom">
         <div className="max-w-lg mx-auto">
           <button
             onClick={() => onValidate(items)}

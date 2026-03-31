@@ -61,7 +61,7 @@ export default function OnboardingQuestions({ transactions, onDone }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
+    <div className="flex flex-col items-center justify-center min-h-[80dvh] px-4">
       <div className="w-full max-w-sm">
         <p className="text-xs text-gray-400 mb-6 text-center">
           {currentIndex + 1} / {unconfigured.length}

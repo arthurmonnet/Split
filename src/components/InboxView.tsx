@@ -224,7 +224,7 @@ export default function InboxView({ transactions, onComplete, onSwitchToSwipe }:
               <button
                 type="button"
                 onClick={clearFilter}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm p-2"
               >
                 ✕
               </button>
@@ -297,12 +297,14 @@ export default function InboxView({ transactions, onComplete, onSwitchToSwipe }:
                 selected.has(tx.id) ? 'bg-gray-50' : 'hover:bg-gray-50'
               } ${tx.classification === 'ambiguous' ? 'border-l-2 border-l-orange-300' : ''}`}
             >
-              <input
-                type="checkbox"
-                checked={selected.has(tx.id)}
-                onChange={() => toggleSelected(tx.id)}
-                className="shrink-0 rounded border-gray-300 text-gray-900 w-4 h-4 cursor-pointer"
-              />
+              <label className="shrink-0 flex items-center justify-center w-11 h-11 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selected.has(tx.id)}
+                  onChange={() => toggleSelected(tx.id)}
+                  className="rounded border-gray-300 text-gray-900 w-4 h-4"
+                />
+              </label>
 
               <button
                 onClick={() => toggleClassification(tx.id)}
@@ -335,7 +337,7 @@ export default function InboxView({ transactions, onComplete, onSwitchToSwipe }:
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 safe-bottom">
         <div className="max-w-lg mx-auto flex gap-2">
           {ambiguousCount > 0 && (
             <button
